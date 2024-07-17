@@ -29,7 +29,6 @@ services:
           type: redis
           name: redis
           property: connectionString
-    startCommand: celery -A celery_app worker --loglevel=info
 
   - type: web
     name: dashboard
