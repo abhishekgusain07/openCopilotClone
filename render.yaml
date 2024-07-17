@@ -6,37 +6,63 @@ services:
     dockerContext: ./llm-server
     envVars:
       - key: PORT
-        value: 8002
+        value: "8002"
       - key: OPENAI_API_KEY
-        sync: false  # This indicates that the value will be set manually in Render's dashboard
+        sync: false
     disk:
       name: shared_data
       mountPath: /app/shared_data
     healthCheckPath: /
     numInstances: 1
-    buildCommand: docker build --target ${TARGET} -t codebanesr/llm-server:latest .
-    startCommand: docker run -p 8002:8002 -p 5678:5678 codebanesr/llm-server:latest
 
-  # ... (other services remain the same)
+  - type: worker
+    name: celery-worker
+    env: docker
+    dockerfilePath: ./llm-server/worker.Dockerfile
+    dockerContext: ./llm-server
+    disk:
+      name: shared_data
+      mountPath: /app/shared_data
+    envVars:
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
+    startCommand: celery -A celery_app worker --loglevel=info
+
+  - type: web
+    name: dashboard
+    env: docker
+    dockerfilePath: ./dashboard/Dockerfile
+    dockerContext: ./dashboard
+    disk:
+      name: shared_data
+      mountPath: /app/shared_data
+    envVars:
+      - key: PORT
+        value: "8000"
+
+databases:
+  - name: mysql
+    databaseName: opencopilot
+    user: dbuser
+    plan: standard
+
+  - name: redis
+    ipAllowList: []
+
+  - name: qdrant
+    plan: standard
 
 envVarGroups:
   - name: llm-server-config
     envVars:
       - key: MYSQL_URL
-        fromDatabase:
-          name: mysql
-          property: connectionString
+        value: ${MYSQL_URL}
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: redis
-          property: connectionString
+        value: ${REDIS_URL}
       - key: QDRANT_URL
-        fromDatabase:
-          name: qdrant
-          property: connectionString
+        value: ${QDRANT_URL}
       - key: OPENAI_API_KEY
-        sync: false  # This indicates that the value will be set manually in Render's dashboard
-      # Add other environment variables from your .env file here
-
-# ... (rest of the configuration remains the same)
+        sync: false
