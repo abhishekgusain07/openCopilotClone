@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: llm-server
+    env: docker
+    dockerfilePath: ./llm-server/Dockerfile
+    dockerContext: ./llm-server
+    envVars:
+      - key: PORT
+        value: 8002
+      - key: OPENAI_API_KEY
+        sync: false  # This indicates that the value will be set manually in Render's dashboard
+    disk:
+      name: shared_data
+      mountPath: /app/shared_data
+    healthCheckPath: /
+    numInstances: 1
+    buildCommand: docker build --target ${TARGET} -t codebanesr/llm-server:latest .
+    startCommand: docker run -p 8002:8002 -p 5678:5678 codebanesr/llm-server:latest
+
+  # ... (other services remain the same)
+
+envVarGroups:
+  - name: llm-server-config
+    envVars:
+      - key: MYSQL_URL
+        fromDatabase:
+          name: mysql
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
+      - key: QDRANT_URL
+        fromDatabase:
+          name: qdrant
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false  # This indicates that the value will be set manually in Render's dashboard
+      # Add other environment variables from your .env file here
+
+# ... (rest of the configuration remains the same)
