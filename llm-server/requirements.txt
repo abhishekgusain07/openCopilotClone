@@ -145,7 +145,7 @@ structlog==23.2.0
 sympy==1.12
 taskgroup==0.0.0a4
 tenacity==8.2.3
-tiktoken==0.5.1
+tiktoken==0.7.0
 tokenizers==0.14.1
 tomli==2.0.1
 tqdm==4.66.4
